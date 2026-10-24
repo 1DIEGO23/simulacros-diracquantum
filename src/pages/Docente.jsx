@@ -1,14 +1,22 @@
 // Página del Docente
-// Muestra un mensaje de bienvenida y un botón para cerrar sesión
+// Panel para crear simulacros y gestionar preguntas
 
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
+import CrearSimulacro from '../components/CrearSimulacro'
+import ListaSimulacros from '../components/ListaSimulacros'
+import AgregarPregunta from '../components/AgregarPregunta'
+import ListaPreguntas from '../components/ListaPreguntas'
 
 export default function Docente() {
   const { session, userRole } = useAuth()
   const navigate = useNavigate()
+  const [simulacroSeleccionado, setSimulacroSeleccionado] = useState(null)
+  const [vista, setVista] = useState('lista') // 'lista' o 'crear'
+  const [refrescar, setRefrescar] = useState(0)
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut()
@@ -16,6 +24,24 @@ export default function Docente() {
       console.error('Error al cerrar sesión:', error)
     }
     navigate('/login')
+  }
+
+  const handleSimulacroCreado = () => {
+    setVista('lista')
+  }
+
+  const handleSimulacroSeleccionado = (simulacro) => {
+    setSimulacroSeleccionado(simulacro)
+    setVista('preguntas')
+  }
+
+  const handleSimulacroEliminado = () => {
+    setSimulacroSeleccionado(null)
+  }
+
+  const handleVolver = () => {
+    setSimulacroSeleccionado(null)
+    setVista('lista')
   }
 
   if (!session) {
@@ -29,56 +55,164 @@ export default function Docente() {
       padding: '40px 20px',
     }}>
       <div style={{
-        maxWidth: '600px',
+        maxWidth: '800px',
         margin: '0 auto',
-        padding: '40px',
-        borderRadius: '12px',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        border: `1px solid ${brand.colors.electricBlue}`,
-        boxShadow: `0 0 20px rgba(59, 130, 246, 0.3)`,
       }}>
-        <h1 style={{
-          color: brand.colors.text,
-          marginBottom: '20px',
-          fontSize: '28px',
-        }}>
-          Hola, {session.user.email}
-        </h1>
-
-        <p style={{
-          color: brand.colors.textMuted,
+        {/* Encabezado */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           marginBottom: '30px',
-          fontSize: '16px',
         }}>
-          Rol: {userRole === 'docente' ? 'Docente' : userRole}
-        </p>
+          <div>
+            <h1 style={{
+              color: brand.colors.text,
+              marginBottom: '10px',
+              fontSize: '28px',
+            }}>
+              Panel Docente
+            </h1>
+            <p style={{
+              color: brand.colors.textMuted,
+              fontSize: '14px',
+            }}>
+              {session.user.email} · {userRole === 'docente' ? 'Docente' : userRole}
+            </p>
+          </div>
 
-        <p style={{
-          color: brand.colors.textMuted,
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: brand.colors.error,
+              color: brand.colors.text,
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+            }}
+            onMouseOver={(e) => e.target.style.opacity = '0.8'}
+            onMouseOut={(e) => e.target.style.opacity = '1'}
+          >
+            Cerrar sesión
+          </button>
+        </div>
+
+        {/* Botones de navegación */}
+        <div style={{
+          display: 'flex',
+          gap: '10px',
           marginBottom: '30px',
-          fontSize: '14px',
         }}>
-          Próximamente podrás crear simulacros, ver los resultados de los alumnos y gestionar el contenido.
-        </p>
+          <button
+            onClick={() => setVista('lista')}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: vista === 'lista' ? `2px solid ${brand.colors.electricBlue}` : `1px solid ${brand.colors.textMuted}`,
+              backgroundColor: vista === 'lista' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+              color: brand.colors.text,
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+            }}
+            onMouseOver={(e) => e.target.style.opacity = '0.8'}
+            onMouseOut={(e) => e.target.style.opacity = '1'}
+          >
+            Lista de simulacros
+          </button>
 
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: '12px 24px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: brand.colors.violetNeon,
-            color: brand.colors.text,
-            fontSize: '16px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'opacity 0.2s',
-          }}
-          onMouseOver={(e) => e.target.style.opacity = '0.8'}
-          onMouseOut={(e) => e.target.style.opacity = '1'}
-        >
-          Cerrar sesión
-        </button>
+          <button
+            onClick={() => setVista('crear')}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: vista === 'crear' ? `2px solid ${brand.colors.violetNeon}` : `1px solid ${brand.colors.textMuted}`,
+              backgroundColor: vista === 'crear' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+              color: brand.colors.text,
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+            }}
+            onMouseOver={(e) => e.target.style.opacity = '0.8'}
+            onMouseOut={(e) => e.target.style.opacity = '1'}
+          >
+            Crear simulacro
+          </button>
+        </div>
+
+        {/* Contenido según vista */}
+        {vista === 'lista' && (
+          <ListaSimulacros
+            onSimulacroSeleccionado={handleSimulacroSeleccionado}
+            onSimulacroEliminado={handleSimulacroEliminado}
+          />
+        )}
+
+        {vista === 'crear' && (
+          <CrearSimulacro onSimulacroCreado={handleSimulacroCreado} />
+        )}
+
+        {vista === 'preguntas' && simulacroSeleccionado && (
+          <div>
+            <button
+              onClick={handleVolver}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: `1px solid ${brand.colors.textMuted}`,
+                backgroundColor: 'transparent',
+                color: brand.colors.text,
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                marginBottom: '20px',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseOver={(e) => e.target.style.opacity = '0.8'}
+              onMouseOut={(e) => e.target.style.opacity = '1'}
+            >
+              ← Volver a la lista
+            </button>
+
+            <div style={{
+              padding: '20px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              border: `1px solid ${brand.colors.electricBlue}`,
+              marginBottom: '20px',
+            }}>
+              <h2 style={{
+                color: brand.colors.text,
+                marginBottom: '10px',
+                fontSize: '20px',
+              }}>
+                {simulacroSeleccionado.titulo}
+              </h2>
+              <p style={{
+                color: brand.colors.textMuted,
+                fontSize: '14px',
+              }}>
+                Duración: {simulacroSeleccionado.duracion_minutos} minutos
+              </p>
+            </div>
+
+            <AgregarPregunta
+              simulacroId={simulacroSeleccionado.id}
+              onPreguntaAgregada={() => setRefrescar((n) => n + 1)}
+            />
+
+            <ListaPreguntas
+              simulacroId={simulacroSeleccionado.id}
+              refrescar={refrescar}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

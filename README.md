@@ -1,6 +1,8 @@
 # Simulacros DiracQuantum - Etapa 1: Login
+# Etapa 2: Panel Docente
+# Etapa 3: Fórmulas matemáticas e imágenes
 
-Esta es la primera etapa del proyecto DiracQuantum. Por ahora solo incluye el sistema de login y la redirección por rol.
+Esta es la primera etapa del proyecto DiracQuantum. Por ahora incluye el sistema de login, la redirección por rol, el panel docente para crear simulacros, y soporte para fórmulas matemáticas (KaTeX) e imágenes.
 
 ## Archivos creados y su función
 

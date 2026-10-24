@@ -49,3 +49,19 @@ input:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: #7c3aed;
 }
+
+/* KaTeX: ajustes para tema oscuro */
+.katex {
+  font-size: 1.1em;
+}
+
+.katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Asegurar que las fórmulas se vean bien en celular */
+.katex-html {
+  color: inherit;
+}
