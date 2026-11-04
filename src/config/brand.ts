@@ -3,8 +3,9 @@
 
 export const brand = {
   // Identidad
-  name: 'DiracQuantum · Nivel UNI',
+  name: 'Bienvenidos a la plataforma de simulacros de DiracQuantum!',
   slogan: 'Preparamos tu mente para tu éxito académico',
+  logoUrl: '/logo.png',
 
   // Colores
   colors: {

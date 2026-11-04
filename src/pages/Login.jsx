@@ -52,30 +52,42 @@ export default function Login() {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: brand.colors.background,
-      padding: '20px',
+      padding: '16px',
     }}>
       <div style={{
         maxWidth: '400px',
         width: '100%',
-        padding: '40px',
+        padding: '24px',
         borderRadius: '12px',
         backgroundColor: 'rgba(139, 92, 246, 0.1)',
         border: `1px solid ${brand.colors.violetNeon}`,
         boxShadow: `0 0 20px rgba(139, 92, 246, 0.3)`,
       }}>
+        <img
+          src={brand.logoUrl}
+          alt="Logo DiracQuantum"
+          style={{
+            display: 'block',
+            margin: '0 auto 16px',
+            maxWidth: '200px',
+            width: '100%',
+            height: 'auto',
+          }}
+        />
         <h1 style={{
           color: brand.colors.text,
           textAlign: 'center',
-          marginBottom: '10px',
-          fontSize: '24px',
+          marginBottom: '8px',
+          fontSize: '20px',
+          lineHeight: 1.3,
         }}>
           {brand.name}
         </h1>
         <p style={{
           color: brand.colors.textMuted,
           textAlign: 'center',
-          marginBottom: '30px',
-          fontSize: '14px',
+          marginBottom: '24px',
+          fontSize: '13px',
         }}>
           {brand.slogan}
         </p>

@@ -52,7 +52,7 @@ export default function Docente() {
     <div style={{
       minHeight: '100vh',
       backgroundColor: brand.colors.background,
-      padding: '40px 20px',
+      padding: '20px 12px',
     }}>
       <div style={{
         maxWidth: '800px',
@@ -63,22 +63,38 @@ export default function Docente() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '30px',
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          gap: 12,
         }}>
-          <div>
-            <h1 style={{
-              color: brand.colors.text,
-              marginBottom: '10px',
-              fontSize: '28px',
-            }}>
-              Panel Docente
-            </h1>
-            <p style={{
-              color: brand.colors.textMuted,
-              fontSize: '14px',
-            }}>
-              {session.user.email} · {userRole === 'docente' ? 'Docente' : userRole}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+            <img
+              src={brand.logoUrl}
+              alt="Logo DiracQuantum"
+              style={{
+                width: 50,
+                height: 50,
+                objectFit: 'contain',
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{
+                color: brand.colors.text,
+                marginBottom: '6px',
+                fontSize: 24,
+                lineHeight: 1.2,
+              }}>
+                Panel Docente
+              </h1>
+              <p style={{
+                color: brand.colors.textMuted,
+                fontSize: 13,
+                wordBreak: 'break-word',
+              }}>
+                {session.user.email} · {userRole === 'docente' ? 'Docente' : userRole}
+              </p>
+            </div>
           </div>
 
           <button
