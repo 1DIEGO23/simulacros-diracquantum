@@ -10,6 +10,7 @@ import CrearSimulacro from '../components/CrearSimulacro'
 import ListaSimulacros from '../components/ListaSimulacros'
 import AgregarPregunta from '../components/AgregarPregunta'
 import ListaPreguntas from '../components/ListaPreguntas'
+import ImportarPreguntaCSV from '../components/ImportarPreguntaCSV'
 
 export default function Docente() {
   const { session, userRole } = useAuth()
@@ -221,6 +222,11 @@ export default function Docente() {
             <AgregarPregunta
               simulacroId={simulacroSeleccionado.id}
               onPreguntaAgregada={() => setRefrescar((n) => n + 1)}
+            />
+
+            <ImportarPreguntaCSV
+              simulacroId={simulacroSeleccionado.id}
+              onImportado={() => setRefrescar((n) => n + 1)}
             />
 
             <ListaPreguntas
