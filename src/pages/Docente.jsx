@@ -11,6 +11,7 @@ import ListaSimulacros from '../components/ListaSimulacros'
 import AgregarPregunta from '../components/AgregarPregunta'
 import ListaPreguntas from '../components/ListaPreguntas'
 import ImportarPreguntaCSV from '../components/ImportarPreguntaCSV'
+import ImportarPreguntasTexto from '../components/ImportarPreguntasTexto'
 
 export default function Docente() {
   const { session, userRole } = useAuth()
@@ -18,6 +19,7 @@ export default function Docente() {
   const [simulacroSeleccionado, setSimulacroSeleccionado] = useState(null)
   const [vista, setVista] = useState('lista') // 'lista' o 'crear'
   const [refrescar, setRefrescar] = useState(0)
+  const [mostrarImportarTexto, setMostrarImportarTexto] = useState(false)
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut()
@@ -218,6 +220,34 @@ export default function Docente() {
                 Duración: {simulacroSeleccionado.duracion_minutos} minutos
               </p>
             </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setMostrarImportarTexto(!mostrarImportarTexto)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: `1px solid ${brand.colors.violetNeon}`,
+                  backgroundColor: mostrarImportarTexto ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+                  color: brand.colors.text,
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+              >
+                {mostrarImportarTexto ? 'Ocultar importar (texto)' : 'Importar preguntas (texto)'}
+              </button>
+            </div>
+
+            {mostrarImportarTexto && (
+              <ImportarPreguntasTexto
+                simulacroId={simulacroSeleccionado.id}
+                onImportado={(cantidad) => {
+                  setRefrescar((n) => n + 1)
+                  setMostrarImportarTexto(false)
+                }}
+              />
+            )}
 
             <AgregarPregunta
               simulacroId={simulacroSeleccionado.id}
