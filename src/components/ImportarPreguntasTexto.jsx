@@ -1,11 +1,36 @@
 // Componente para importar preguntas desde texto plano
-// Formato: ### PREGUNTA, ENUNCIADO (múltiples líneas), A) B) C) D), RESPUESTA: X
-// LaTeX: $...$ (en línea) y $$...$$ (en bloque), respeta barras invertidas tal cual
+// Formato (acepta "### PREGUNTA" o "#1", "#2", ...):
+//   enunciado (varias líneas, LaTeX con $...$)
+//   A) ...  B) ...  C) ...  D) ...
+//   RESPUESTA: X
+//   FIGURA: svg   (opcional; el código va después, hasta FIN o la siguiente pregunta)
+//   FIN           (opcional)
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
 import TextoMatematico from './TextoMatematico'
+import RenderFiguraCodigo from './RenderFiguraCodigo'
+
+const PLACEHOLDER = `#1
+Calcula sen(θ) en el triángulo ABC.
+A) 7/25
+B) 24/25
+C) 7/24
+D) 24/7
+RESPUESTA: A
+FIGURA: svg
+<svg viewBox="0 0 320 230" xmlns="http://www.w3.org/2000/svg">...</svg>
+FIN
+
+#2
+Calcula 2 + 2.
+A) 3
+B) 4
+C) 5
+D) 6
+RESPUESTA: B
+FIN`
 
 export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
   const [texto, setTexto] = useState('')
@@ -14,102 +39,113 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
   const [error, setError] = useState('')
 
   const parsearTexto = (texto) => {
-    const bloques = texto.trim().split(/### PREGUNTA/i)
+    const lineas = texto.replace(/\r/g, '').split('\n')
     const preguntas = []
+    let actual = null
+    let estado = null
+    let ultimaAlt = null
 
-    for (let i = 1; i < bloques.length; i++) {
-      const bloque = bloques[i].trim()
-      if (!bloque) continue
+    const nueva = () => ({
+      enun: [],
+      alts: { A: '', B: '', C: '', D: '' },
+      clave: '',
+      figTipo: '',
+      fig: [],
+    })
 
-      const pregunta = {
-        numero: i,
-        enunciado: '',
-        alternativas: { A: '', B: '', C: '', D: '' },
-        correcta: '',
-        error: null
+    const cerrar = () => {
+      if (!actual) return
+      const enunciado = actual.enun.join('\n').trim()
+      const codigo = actual.fig.join('\n').trim()
+      const errores = []
+
+      if (!enunciado) errores.push('Enunciado vacío')
+      for (const l of ['A', 'B', 'C', 'D']) {
+        if (!actual.alts[l].trim()) errores.push(`Falta alternativa ${l}`)
+      }
+      if (!actual.clave) errores.push('RESPUESTA inválida o ausente')
+      if (actual.figTipo && !codigo) errores.push('FIGURA sin código')
+      if (codigo && actual.figTipo === 'svg' && !codigo.includes('<svg')) {
+        errores.push('El código de la figura no parece SVG')
       }
 
-      const lineas = bloque.split('\n')
-      let estado = 'enunciado' // enunciado, alternativas, respuesta
-
-      for (const linea of lineas) {
-        const lineaTrim = linea.trim()
-
-        if (!lineaTrim) continue
-
-        // Detectar alternativas
-        const matchAlt = lineaTrim.match(/^([A-D])\)\s*(.+)$/)
-        if (matchAlt) {
-          const letra = matchAlt[1].toUpperCase()
-          pregunta.alternativas[letra] = matchAlt[2].trim()
-          estado = 'alternativas'
-          continue
-        }
-
-        // Detectar respuesta
-        const matchRespuesta = lineaTrim.toUpperCase().match(/^RESPUESTA:\s*([A-D])\s*$/)
-        if (matchRespuesta) {
-          pregunta.correcta = matchRespuesta[1]
-          estado = 'respuesta'
-          continue
-        }
-
-        // Si es enunciado, agregar líneas
-        if (estado === 'enunciado') {
-          if (pregunta.enunciado) {
-            pregunta.enunciado += '\n' + lineaTrim
-          } else {
-            pregunta.enunciado = lineaTrim
-          }
-        }
-      }
-
-      preguntas.push(pregunta)
+      preguntas.push({
+        numero: preguntas.length + 1,
+        enunciado,
+        alternativas: actual.alts,
+        correcta: actual.clave,
+        figura_tipo: codigo ? actual.figTipo || 'svg' : null,
+        figura_codigo: codigo || null,
+        error: errores.length > 0 ? errores : null,
+      })
+      actual = null
+      estado = null
+      ultimaAlt = null
     }
 
+    for (const linea of lineas) {
+      const t = linea.trim()
+
+      // Inicio de pregunta: "### PREGUNTA" o "#1"
+      if (/^(###\s*PREGUNTA\b.*|#\s*\d+)$/i.test(t)) {
+        cerrar()
+        actual = nueva()
+        estado = 'enunciado'
+        continue
+      }
+      if (!actual) continue
+
+      if (/^FIN$/i.test(t)) {
+        cerrar()
+        continue
+      }
+
+      const resp = t.match(/^RESPUESTA\s*:\s*([A-D])\b/i)
+      if (resp) {
+        actual.clave = resp[1].toUpperCase()
+        if (estado !== 'figura') estado = 'respuesta'
+        continue
+      }
+
+      const fig = t.match(/^FIGURA\s*:\s*(svg|jsxgraph)\b/i)
+      if (fig) {
+        actual.figTipo = fig[1].toLowerCase()
+        estado = 'figura'
+        continue
+      }
+
+      if (estado === 'figura') {
+        actual.fig.push(linea)
+        continue
+      }
+
+      if (!t) continue
+
+      const alt = t.match(/^([A-D])\s*[).]\s*(.*)$/i)
+      if (alt) {
+        ultimaAlt = alt[1].toUpperCase()
+        actual.alts[ultimaAlt] = alt[2].trim()
+        estado = 'alternativas'
+        continue
+      }
+
+      if (estado === 'alternativas' && ultimaAlt) {
+        actual.alts[ultimaAlt] += ' ' + t
+      } else if (estado === 'enunciado') {
+        const limpio = actual.enun.length === 0 ? t.replace(/^ENUNCIADO\s*:\s*/i, '') : t
+        actual.enun.push(limpio)
+      }
+    }
+    cerrar()
     return preguntas
-  }
-
-  const validarPregunta = (pregunta) => {
-    const errores = []
-
-    if (!pregunta.enunciado.trim()) {
-      errores.push('Enunciado vacío')
-    }
-
-    if (!pregunta.alternativas.A.trim()) {
-      errores.push('Falta alternativa A')
-    }
-    if (!pregunta.alternativas.B.trim()) {
-      errores.push('Falta alternativa B')
-    }
-    if (!pregunta.alternativas.C.trim()) {
-      errores.push('Falta alternativa C')
-    }
-    if (!pregunta.alternativas.D.trim()) {
-      errores.push('Falta alternativa D')
-    }
-
-    if (!pregunta.correcta) {
-      errores.push('RESPUESTA inválida o ausente')
-    }
-
-    return errores
   }
 
   const handleProcesar = () => {
     setError('')
     const preguntas = parsearTexto(texto)
-    const preguntasConErrores = []
-
-    preguntas.forEach((pregunta) => {
-      const errores = validarPregunta(pregunta)
-      if (errores.length > 0) {
-        pregunta.error = errores
-        preguntasConErrores.push(pregunta)
-      }
-    })
-
+    if (preguntas.length === 0) {
+      setError('No encontré preguntas. Cada pregunta debe empezar con #1, #2... o con ### PREGUNTA.')
+    }
     setParseado(preguntas)
   }
 
@@ -123,7 +159,6 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
     setCargando(true)
 
     try {
-      // Obtener el siguiente orden
       const { data: ultima } = await supabase
         .from('preguntas')
         .select('orden')
@@ -133,8 +168,7 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
 
       const ordenInicial = (ultima?.[0]?.orden ?? 0) + 1
 
-      // Filtrar solo preguntas válidas
-      const preguntasValidas = parseado.filter(p => !p.error)
+      const preguntasValidas = parseado.filter((p) => !p.error)
 
       if (preguntasValidas.length === 0) {
         setError('No hay preguntas válidas para guardar')
@@ -142,21 +176,37 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
         return
       }
 
-      // Insertar preguntas válidas
       for (let i = 0; i < preguntasValidas.length; i++) {
         const pregunta = preguntasValidas[i]
+        const orden = ordenInicial + i
 
-        const { error } = await supabase.rpc('agregar_pregunta', {
+        const { error: errorRpc } = await supabase.rpc('agregar_pregunta', {
           p_simulacro_id: simulacroId,
           p_enunciado: pregunta.enunciado,
           p_alternativas: pregunta.alternativas,
           p_correcta: pregunta.correcta,
-          p_orden: ordenInicial + i,
+          p_orden: orden,
           p_imagen_url: null,
         })
 
-        if (error) {
-          throw new Error(`Error en pregunta ${i + 1}: ${error.message}`)
+        if (errorRpc) {
+          throw new Error(`Error en pregunta ${i + 1}: ${errorRpc.message}`)
+        }
+
+        // La figura se agrega aparte, porque la función agregar_pregunta no la recibe
+        if (pregunta.figura_codigo) {
+          const { error: errorFigura } = await supabase
+            .from('preguntas')
+            .update({
+              figura_tipo: pregunta.figura_tipo,
+              figura_codigo: pregunta.figura_codigo,
+            })
+            .eq('simulacro_id', simulacroId)
+            .eq('orden', orden)
+
+          if (errorFigura) {
+            throw new Error(`Pregunta ${i + 1} guardada, pero su figura falló: ${errorFigura.message}`)
+          }
         }
       }
 
@@ -167,8 +217,8 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
       if (onImportado) {
         onImportado(cantidadGuardada)
       }
-    } catch (error) {
-      setError(`Error al guardar: ${error.message}`)
+    } catch (err) {
+      setError(`Error al guardar: ${err.message}`)
     } finally {
       setCargando(false)
     }
@@ -186,9 +236,11 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
   }
 
   const descartarErrores = () => {
-    const preguntasValidas = parseado.filter(p => !p.error)
-    setParseado(preguntasValidas)
+    setParseado(parseado.filter((p) => !p.error))
   }
+
+  const validas = parseado.filter((p) => !p.error).length
+  const conErrores = parseado.length - validas
 
   return (
     <div style={{
@@ -243,14 +295,9 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="### PREGUNTA
-ENUNCIADO: Calcule $\displaystyle\int_0^1 2x\,dx$.
-A) $0$
-B) $1$
-C) $2$
-D) $\tfrac{1}{2}$
-RESPUESTA: B"
+          placeholder={PLACEHOLDER}
           rows={10}
+          spellCheck={false}
           style={{
             width: '100%',
             padding: '10px',
@@ -261,6 +308,7 @@ RESPUESTA: B"
             fontSize: '14px',
             resize: 'vertical',
             fontFamily: 'monospace',
+            boxSizing: 'border-box',
           }}
         />
       </div>
@@ -316,7 +364,7 @@ RESPUESTA: B"
             fontSize: '14px',
             color: brand.colors.text,
           }}>
-            {parseado.filter(p => !p.error).length} preguntas válidas, {parseado.filter(p => p.error).length} con errores
+            {validas} preguntas válidas, {conErrores} con errores
           </div>
 
           {parseado.map((pregunta, index) => (
@@ -352,6 +400,10 @@ RESPUESTA: B"
                 </div>
               )}
 
+              {pregunta.figura_codigo && (
+                <RenderFiguraCodigo tipo={pregunta.figura_tipo} codigo={pregunta.figura_codigo} />
+              )}
+
               <div style={{ fontSize: '13px', color: brand.colors.text }}>
                 <p>A) <TextoMatematico texto={pregunta.alternativas.A} /></p>
                 <p>B) <TextoMatematico texto={pregunta.alternativas.B} /></p>
@@ -369,7 +421,7 @@ RESPUESTA: B"
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
             <button
               onClick={descartarErrores}
-              disabled={parseado.filter(p => !p.error).length === parseado.length}
+              disabled={conErrores === 0}
               style={{
                 padding: '10px 20px',
                 borderRadius: '6px',
@@ -378,8 +430,8 @@ RESPUESTA: B"
                 color: brand.colors.text,
                 fontSize: '14px',
                 fontWeight: 'bold',
-                cursor: parseado.filter(p => !p.error).length === parseado.length ? 'not-allowed' : 'pointer',
-                opacity: parseado.filter(p => !p.error).length === parseado.length ? 0.5 : 1,
+                cursor: conErrores === 0 ? 'not-allowed' : 'pointer',
+                opacity: conErrores === 0 ? 0.5 : 1,
               }}
             >
               Descartar errores
@@ -387,7 +439,7 @@ RESPUESTA: B"
 
             <button
               onClick={handleGuardar}
-              disabled={cargando || parseado.filter(p => !p.error).length === 0}
+              disabled={cargando || validas === 0}
               style={{
                 padding: '10px 20px',
                 borderRadius: '6px',
@@ -396,8 +448,8 @@ RESPUESTA: B"
                 color: brand.colors.text,
                 fontSize: '14px',
                 fontWeight: 'bold',
-                cursor: cargando || parseado.filter(p => !p.error).length === 0 ? 'not-allowed' : 'pointer',
-                opacity: cargando || parseado.filter(p => !p.error).length === 0 ? 0.5 : 1,
+                cursor: cargando || validas === 0 ? 'not-allowed' : 'pointer',
+                opacity: cargando || validas === 0 ? 0.5 : 1,
               }}
             >
               {cargando ? 'Guardando...' : 'Guardar todas'}
