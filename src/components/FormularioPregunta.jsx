@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
 import TextoMatematico from './TextoMatematico'
+import RenderFiguraCodigo from './RenderFiguraCodigo'
 
 const LETRAS = ['A', 'B', 'C', 'D']
 
@@ -41,6 +42,8 @@ export default function FormularioPregunta({
   })
   const [correcta, setCorrecta] = useState(inicial?.clave || 'A')
   const [imagenUrl, setImagenUrl] = useState(inicial?.imagen_url || '')
+  const [figuraTipo, setFiguraTipo] = useState(inicial?.figura_tipo || 'svg')
+  const [figuraCodigo, setFiguraCodigo] = useState(inicial?.figura_codigo || '')
   const [subiendo, setSubiendo] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -95,6 +98,8 @@ export default function FormularioPregunta({
       }
     }
 
+    const codigoLimpio = figuraCodigo.trim()
+
     setGuardando(true)
     try {
       await onGuardar({
@@ -102,12 +107,16 @@ export default function FormularioPregunta({
         alternativas,
         clave: correcta,
         imagen_url: imagenUrl || null,
+        figura_tipo: codigoLimpio ? figuraTipo : null,
+        figura_codigo: codigoLimpio || null,
       })
       if (limpiarAlGuardar) {
         setEnunciado('')
         setAlternativas({ A: '', B: '', C: '', D: '' })
         setCorrecta('A')
         setImagenUrl('')
+        setFiguraCodigo('')
+        setFiguraTipo('svg')
       }
     } catch (err) {
       console.error('Error al guardar pregunta:', err)
@@ -161,6 +170,52 @@ export default function FormularioPregunta({
             }}
           >
             Quitar imagen
+          </button>
+        </div>
+      )}
+
+      {/* Figura generada por código */}
+      <label style={estiloEtiqueta}>Figura por código (opcional)</label>
+      <select
+        value={figuraTipo}
+        onChange={(e) => setFiguraTipo(e.target.value)}
+        style={estiloCampo}
+      >
+        <option value="svg">SVG</option>
+        <option value="jsxgraph">JSXGraph</option>
+      </select>
+      <textarea
+        value={figuraCodigo}
+        onChange={(e) => setFiguraCodigo(e.target.value)}
+        placeholder={
+          figuraTipo === 'svg'
+            ? '<svg viewBox="0 0 320 230" xmlns="http://www.w3.org/2000/svg">...</svg>'
+            : "var A = board.create('point', [-3, -2]);\nvar B = board.create('point', [3, -2]);\nboard.create('segment', [A, B]);"
+        }
+        rows={6}
+        spellCheck={false}
+        style={{ ...estiloCampo, resize: 'vertical', fontFamily: 'monospace', fontSize: '13px' }}
+      />
+      {figuraCodigo.trim() && (
+        <div style={{ marginBottom: '14px' }}>
+          <p style={{ color: brand.colors.textMuted, fontSize: '13px', marginBottom: '4px' }}>
+            Vista previa de la figura:
+          </p>
+          <RenderFiguraCodigo tipo={figuraTipo} codigo={figuraCodigo} />
+          <button
+            type="button"
+            onClick={() => setFiguraCodigo('')}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: `1px solid ${brand.colors.error}`,
+              backgroundColor: 'transparent',
+              color: brand.colors.error,
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
+          >
+            Quitar figura
           </button>
         </div>
       )}
@@ -252,6 +307,10 @@ export default function FormularioPregunta({
           }}>
             <TextoMatematico texto={enunciado || 'Enunciado de la pregunta...'} />
           </p>
+
+          {figuraCodigo.trim() && (
+            <RenderFiguraCodigo tipo={figuraTipo} codigo={figuraCodigo} />
+          )}
 
           {LETRAS.map((letra) => (
             <div
