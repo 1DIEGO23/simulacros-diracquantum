@@ -187,26 +187,13 @@ export default function ImportarPreguntasTexto({ simulacroId, onImportado }) {
           p_correcta: pregunta.correcta,
           p_orden: orden,
           p_imagen_url: null,
+          p_figura_svg: null,
+          p_figura_codigo: pregunta.figura_codigo,
+          p_figura_tipo: pregunta.figura_tipo,
         })
 
         if (errorRpc) {
           throw new Error(`Error en pregunta ${i + 1}: ${errorRpc.message}`)
-        }
-
-        // La figura se agrega aparte, porque la función agregar_pregunta no la recibe
-        if (pregunta.figura_codigo) {
-          const { error: errorFigura } = await supabase
-            .from('preguntas')
-            .update({
-              figura_tipo: pregunta.figura_tipo,
-              figura_codigo: pregunta.figura_codigo,
-            })
-            .eq('simulacro_id', simulacroId)
-            .eq('orden', orden)
-
-          if (errorFigura) {
-            throw new Error(`Pregunta ${i + 1} guardada, pero su figura falló: ${errorFigura.message}`)
-          }
         }
       }
 
