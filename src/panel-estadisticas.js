@@ -26,41 +26,42 @@
 
   function calcular(items) {
     var vacio = { ok: false, error: '' };
-    if (!Array.isArray(items)) { vacio.error = 'Sin datos del intento.'; return vacio; }
+    if (!Array.isArray(items) || items.length < 2) { vacio.error = 'Sin datos del intento.'; return vacio; }
+    var N = items.length, mitad = Math.floor(N / 2);
+    // Primera mitad = RV (Lectora), segunda mitad = RM (Matemáticas). Con 60 preguntas: 1-30 y 31-60.
+    var rangos = { rv: [1, mitad], rm: [mitad + 1, N] };
     var vistos = {}, i, it;
-    for (i = 0; i < items.length; i++) {
+    for (i = 0; i < N; i++) {
       it = items[i];
       var o = Number(it && it.orden);
-      if (!(o >= 1 && o <= TOTAL) || o % 1 !== 0) { vacio.error = 'Número de orden inválido.'; return vacio; }
+      if (!(o >= 1 && o <= N) || o % 1 !== 0) { vacio.error = 'Número de orden inválido.'; return vacio; }
       if (vistos[o]) { vacio.error = 'Pregunta repetida: ' + o; return vacio; }
       vistos[o] = it;
     }
-    if (items.length !== TOTAL) { vacio.error = 'El intento no tiene 60 preguntas.'; return vacio; }
 
-    var res = { ok: true, areas: {}, total: { correctas: 0, incorrectas: 0, sinResponder: 0 } };
+    var res = { ok: true, areas: {}, total: { preguntas: N, correctas: 0, incorrectas: 0, sinResponder: 0 } };
     AREAS.forEach(function (a) {
-      var c = 0, inc = 0, sr = 0, n = 0;
-      for (var k = a.desde; k <= a.hasta; k++) {
-        var p = vistos[k]; n++;
-        var m = norm(p.marcada);
+      var d = rangos[a.id][0], h = rangos[a.id][1], n = h - d + 1, c = 0, inc = 0, sr = 0;
+      for (var k = d; k <= h; k++) {
+        var m = norm(vistos[k].marcada);
         if (m === '') sr++;
-        else if (m === norm(p.correcta)) c++;
+        else if (m === norm(vistos[k].correcta)) c++;
         else inc++;
       }
-      if (n !== POR_AREA || c + inc + sr !== POR_AREA) { vacio.error = 'Conteo inconsistente en ' + a.nombre; return; }
+      if (c + inc + sr !== n) { vacio.error = 'Conteo inconsistente en ' + a.nombre; return; }
       res.areas[a.id] = {
         id: a.id, nombre: a.nombre, sigla: a.sigla, color: a.color,
-        correctas: c, incorrectas: inc, sinResponder: sr,
+        preguntas: n, correctas: c, incorrectas: inc, sinResponder: sr,
         respondidas: c + inc,
-        pctAciertos: (c / POR_AREA) * 100,
-        pctRespondidas: ((c + inc) / POR_AREA) * 100
+        pctAciertos: (c / n) * 100,
+        pctRespondidas: ((c + inc) / n) * 100
       };
       res.total.correctas += c; res.total.incorrectas += inc; res.total.sinResponder += sr;
     });
     if (!res.areas.rv || !res.areas.rm) return vacio;
     var t = res.total;
-    if (t.correctas + t.incorrectas + t.sinResponder !== TOTAL) { vacio.error = 'La suma no da 60.'; return vacio; }
-    t.pctAciertos = (t.correctas / TOTAL) * 100;
+    if (t.correctas + t.incorrectas + t.sinResponder !== N) { vacio.error = 'La suma no coincide con el total.'; return vacio; }
+    t.pctAciertos = (t.correctas / N) * 100;
     res.diagnostico = diagnostico(res.areas.rv, res.areas.rm);
     return res;
   }
@@ -102,7 +103,7 @@
       '<div><b class="bad">' + a.incorrectas + '</b><span>Incorrectas</span></div>' +
       '<div><b class="nul">' + a.sinResponder + '</b><span>Sin responder</span></div></div>' +
       '<div class="dqe-bar" aria-hidden="true"><i style="width:' + a.pctAciertos.toFixed(1) + '%"></i></div>' +
-      '<p class="dqe-note">Aciertos: ' + fmt(a.pctAciertos) + ' · Respondiste ' + a.respondidas + ' de 30</p></section>';
+      '<p class="dqe-note">Aciertos: ' + fmt(a.pctAciertos) + ' · Respondiste ' + a.respondidas + ' de ' + a.preguntas + '</p></section>';
   }
 
   function comp(a, mejor, reforzar) {
@@ -142,7 +143,7 @@
       '<div class="dqe-card"><b class="ok">' + t.correctas + '</b><span>Correctas</span></div>' +
       '<div class="dqe-card"><b class="bad">' + t.incorrectas + '</b><span>Incorrectas</span></div>' +
       '<div class="dqe-card"><b class="nul">' + t.sinResponder + '</b><span>Sin responder</span></div>' +
-      '<div class="dqe-card"><b>' + fmt(t.pctAciertos) + '</b><span>Aciertos sobre 60</span></div></div>' +
+      '<div class="dqe-card"><b>' + fmt(t.pctAciertos) + '</b><span>Aciertos sobre ' + t.preguntas + '</span></div></div>' +
       '<div class="dqe-areas">' + bloque(rv) + bloque(rm) + '</div>' +
       '<section class="dqe-card dqe-cmp"><h3>Comparación entre áreas</h3>' + comp(rv, d.mejor, d.reforzar) + comp(rm, d.mejor, d.reforzar) + '</section>' +
       '<section class="dqe-card dqe-diag"><h3>¿CÓMO FUE TU DESEMPEÑO?</h3><p>' + d.texto + '</p></section></div>';
