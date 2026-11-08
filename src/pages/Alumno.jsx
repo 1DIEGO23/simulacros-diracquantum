@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
 import TextoMatematico from '../components/TextoMatematico'
 import RenderFiguraCodigo from '../components/RenderFiguraCodigo'
+import PanelRendimiento from '../PanelRendimiento.jsx'
 
 // ---------------------------------------------------------------------
 // Colores (toma los de brand y usa respaldo si alguno no existe)
@@ -118,6 +119,16 @@ function normalizarAlternativas(alt) {
     }))
   }
   return []
+}
+
+// Convierte las filas de revision_intento al formato del panel de estadísticas
+// (las filas llegan ordenadas: 1-30 = Lectora, 31-60 = Matemáticas)
+function filasAItems(filas) {
+  return (filas ?? []).map((f, i) => ({
+    orden: i + 1,
+    correcta: f.clave ?? '',
+    marcada: (f.alternativa_elegida ?? '').trim(),
+  }))
 }
 
 function formatearTiempo(seg) {
@@ -235,6 +246,7 @@ export default function Alumno() {
   const [fallo, setFallo] = useState(false)
   const [resultado, setResultado] = useState(null)
   const [revision, setRevision] = useState(null)
+  const [itemsStats, setItemsStats] = useState(null)
 
   const cola = useRef({}) // cola de guardado por pregunta (mantiene el orden)
   const finalizando = useRef(false)
@@ -271,6 +283,7 @@ export default function Alumno() {
     setRespuestas({})
     setResultado(null)
     setRevision(null)
+    setItemsStats(null)
     setActual(0)
     setRestante(null)
     setConfirmando(false)
@@ -418,6 +431,24 @@ export default function Alumno() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restante, vista, enviando, fallo])
+
+  // Al mostrar el resultado, trae las claves para armar las estadísticas
+  useEffect(() => {
+    if (vista !== 'resultado' || !examen) return undefined
+    let vivo = true
+    setItemsStats(null)
+    supabase.rpc('revision_intento', { p_intento_id: examen.intentoId }).then(({ data, error: e }) => {
+      if (!vivo) return
+      if (e) {
+        console.error('No se pudieron cargar las estadísticas:', e)
+        return
+      }
+      setItemsStats(filasAItems(data))
+    })
+    return () => {
+      vivo = false
+    }
+  }, [vista, examen])
 
   // ----- Revisión -----
   const verRevision = async (intentoId, titulo) => {
@@ -734,8 +765,11 @@ export default function Alumno() {
   if (vista === 'resultado' && resultado) {
     return (
       <div style={pagina}>
-        <div style={{ ...caja, maxWidth: 560 }}>
-          <div style={{ ...tarjeta, textAlign: 'center' }}>
+        <div style={{ ...caja, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ order: 2, marginTop: 20 }}>
+            <PanelRendimiento items={itemsStats} puntaje={Number(resultado.nota).toFixed(2)} puntajeMax={20} />
+          </div>
+          <div style={{ ...tarjeta, textAlign: 'center', order: 1, maxWidth: 560, width: '100%', margin: '0 auto' }}>
             <h1 style={{ marginTop: 0, fontSize: 24 }}>
               {resultado.porTiempo ? 'Se acabó el tiempo' : 'Examen enviado'}
             </h1>
@@ -799,6 +833,8 @@ export default function Alumno() {
               Volver a mis simulacros
             </button>
           </div>
+
+          <PanelRendimiento items={filasAItems(revision.filas)} />
 
           {revision.filas.map((f, idx) => {
             const elegida = (f.alternativa_elegida ?? '').trim().toUpperCase() || null
