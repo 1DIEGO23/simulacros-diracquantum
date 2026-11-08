@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
 import TextoMatematico from '../components/TextoMatematico'
+import RenderFiguraCodigo from '../components/RenderFiguraCodigo'
 
 // ---------------------------------------------------------------------
 // Colores (toma los de brand y usa respaldo si alguno no existe)
@@ -63,6 +64,13 @@ const botonLinea = (desactivado = false) => ({
 // ---------------------------------------------------------------------
 // Utilidades
 // ---------------------------------------------------------------------
+
+// Figura de una pregunta: soporta la nueva (figura_codigo + figura_tipo) y la antigua (figura_svg)
+function figuraDe(p) {
+  if (p?.figura_codigo) return { tipo: p.figura_tipo || 'svg', codigo: p.figura_codigo }
+  if (p?.figura_svg) return { tipo: 'svg', codigo: p.figura_svg }
+  return null
+}
 
 // Acepta varios formatos posibles del campo "alternativas" (jsonb)
 function normalizarAlternativas(alt) {
@@ -277,9 +285,10 @@ export default function Alumno() {
         .single()
       if (e2) throw e2
 
+      // select('*') para recibir también las columnas de figura si la vista las tiene
       const { data: pregs, error: e3 } = await supabase
         .from('preguntas_alumno')
-        .select('id, enunciado, alternativas, imagen_url, orden')
+        .select('*')
         .eq('simulacro_id', sim.id)
         .order('orden', { ascending: true })
         .order('id', { ascending: true })
@@ -515,6 +524,7 @@ export default function Alumno() {
   // =====================================================================
   if (vista === 'examen' && examen) {
     const p = examen.preguntas[actual]
+    const figuraActual = figuraDe(p)
     const total = examen.preguntas.length
     const respondidas = examen.preguntas.filter((q) => respuestas[q.id]).length
     const faltan = total - respondidas
@@ -546,275 +556,3 @@ export default function Alumno() {
                 padding: '6px 14px',
               }}
             >
-              {formatearTiempo(restante)}
-            </div>
-          </div>
-
-          {aviso && <Aviso>{aviso}</Aviso>}
-          {fallo && (
-            <div style={{ marginBottom: 16 }}>
-              <button type="button" style={boton(C.violeta)} onClick={() => { setFallo(false); finalizar(restante !== null && restante <= 0) }}>
-                Reintentar envío
-              </button>
-            </div>
-          )}
-
-          <div style={{ ...tarjeta, marginBottom: 16 }}>
-            <p style={{ margin: '0 0 12px', color: C.suave, fontSize: 14 }}>
-              Pregunta {actual + 1} de {total}. Respondidas: {respondidas}.
-            </p>
-            <div style={{ fontSize: 18, lineHeight: 1.6, marginBottom: 12 }}>
-              <TextoMatematico texto={p.enunciado} />
-            </div>
-            {p.imagen_url && (
-              <img
-                src={p.imagen_url}
-                alt="Imagen de la pregunta"
-                style={{ maxWidth: '100%', borderRadius: 8, margin: '4px 0 16px' }}
-              />
-            )}
-            {p.opciones.length === 0 && (
-              <Aviso>Esta pregunta no tiene alternativas cargadas. Avisa a tu docente.</Aviso>
-            )}
-            {p.opciones.map((op) => (
-              <Opcion
-                key={op.letra}
-                letra={op.letra}
-                texto={op.texto}
-                imagen={op.imagen}
-                estado={respuestas[p.id] === op.letra ? 'elegida' : 'normal'}
-                onClick={() => elegir(p, op.letra)}
-              />
-            ))}
-            <p style={{ margin: '4px 0 0', color: C.suave, fontSize: 13 }}>
-              Toca la alternativa elegida otra vez para dejarla en blanco.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
-            <button
-              type="button"
-              style={botonLinea(actual === 0)}
-              disabled={actual === 0}
-              onClick={() => setActual((a) => a - 1)}
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              style={botonLinea(actual === total - 1)}
-              disabled={actual === total - 1}
-              onClick={() => setActual((a) => a + 1)}
-            >
-              Siguiente
-            </button>
-            <button
-              type="button"
-              style={{ ...boton(C.violeta, enviando), marginLeft: 'auto' }}
-              disabled={enviando}
-              onClick={() => setConfirmando(true)}
-            >
-              {enviando ? 'Enviando…' : 'Finalizar examen'}
-            </button>
-          </div>
-
-          <div style={tarjeta}>
-            <p style={{ margin: '0 0 12px', color: C.suave, fontSize: 14 }}>
-              Ir a una pregunta. Las respondidas se ven en azul.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))', gap: 8 }}>
-              {examen.preguntas.map((q, i) => {
-                const hecha = Boolean(respuestas[q.id])
-                const esActual = i === actual
-                return (
-                  <button
-                    key={q.id}
-                    type="button"
-                    onClick={() => setActual(i)}
-                    aria-label={`Pregunta ${i + 1}${hecha ? ', respondida' : ''}`}
-                    aria-current={esActual ? 'true' : undefined}
-                    style={{
-                      padding: '8px 0',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      fontWeight: 'bold',
-                      color: '#fff',
-                      backgroundColor: hecha ? C.azul : 'transparent',
-                      border: `2px solid ${esActual ? C.violeta : hecha ? C.azul : 'rgba(255,255,255,0.2)'}`,
-                    }}
-                  >
-                    {i + 1}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {confirmando && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 16,
-              zIndex: 50,
-            }}
-          >
-            <div style={{ ...tarjeta, backgroundColor: '#0b0d1c', maxWidth: 440, width: '100%' }}>
-              <h2 style={{ marginTop: 0, fontSize: 20 }}>¿Enviar el examen?</h2>
-              <p style={{ color: C.suave, lineHeight: 1.5 }}>
-                {faltan > 0
-                  ? `Te faltan ${faltan} preguntas por responder. Si envías ahora, quedarán en blanco y ya no podrás volver a rendir este simulacro.`
-                  : 'Respondiste todas las preguntas. Después de enviar ya no podrás cambiar tus respuestas.'}
-              </p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button type="button" style={botonLinea()} onClick={() => setConfirmando(false)}>
-                  Seguir revisando
-                </button>
-                <button type="button" style={boton(C.violeta)} onClick={() => finalizar(false)}>
-                  Enviar examen
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // =====================================================================
-  // VISTA: RESULTADO
-  // =====================================================================
-  if (vista === 'resultado' && resultado) {
-    return (
-      <div style={pagina}>
-        <div style={{ ...caja, maxWidth: 560 }}>
-          <div style={{ ...tarjeta, textAlign: 'center' }}>
-            <h1 style={{ marginTop: 0, fontSize: 24 }}>
-              {resultado.porTiempo ? 'Se acabó el tiempo' : 'Examen enviado'}
-            </h1>
-            <p style={{ color: C.suave, margin: '0 0 8px' }}>{examen?.simulacro?.titulo}</p>
-            <div style={{ fontSize: 56, fontWeight: 'bold', color: C.violeta, lineHeight: 1.1 }}>
-              {Number(resultado.nota).toFixed(2)}
-              <span style={{ fontSize: 22, color: C.suave }}> / 20</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 24, margin: '20px 0', flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 28, fontWeight: 'bold', color: C.ok }}>{resultado.correctas}</div>
-                <div style={{ color: C.suave, fontSize: 14 }}>Correctas</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 28, fontWeight: 'bold', color: C.mal }}>{resultado.incorrectas}</div>
-                <div style={{ color: C.suave, fontSize: 14 }}>Incorrectas</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 28, fontWeight: 'bold' }}>{resultado.en_blanco}</div>
-                <div style={{ color: C.suave, fontSize: 14 }}>En blanco</div>
-              </div>
-            </div>
-            {error && <Aviso>{error}</Aviso>}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                style={boton(C.violeta)}
-                onClick={() => verRevision(examen.intentoId, examen.simulacro.titulo)}
-              >
-                Ver revisión
-              </button>
-              <button type="button" style={botonLinea()} onClick={volverALista}>
-                Volver a mis simulacros
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // =====================================================================
-  // VISTA: REVISIÓN
-  // =====================================================================
-  if (vista === 'revision' && revision) {
-    return (
-      <div style={pagina}>
-        <div style={caja}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 12,
-              marginBottom: 20,
-            }}
-          >
-            <h1 style={{ margin: 0, fontSize: 22 }}>Revisión: {revision.titulo}</h1>
-            <button type="button" style={botonLinea()} onClick={volverALista}>
-              Volver a mis simulacros
-            </button>
-          </div>
-
-          {revision.filas.map((f, idx) => {
-            const elegida = (f.alternativa_elegida ?? '').trim().toUpperCase() || null
-            const clave = (f.clave ?? '').trim().toUpperCase()
-            const estado = !elegida ? 'En blanco' : f.correcta ? 'Correcta' : 'Incorrecta'
-            const colorEstado = !elegida ? C.suave : f.correcta ? C.ok : C.mal
-            return (
-              <div key={f.pregunta_id} style={{ ...tarjeta, marginBottom: 16 }}>
-                <p style={{ margin: '0 0 10px', fontSize: 14, color: colorEstado, fontWeight: 'bold' }}>
-                  Pregunta {idx + 1}: {estado}
-                </p>
-                <div style={{ fontSize: 17, lineHeight: 1.6, marginBottom: 12 }}>
-                  <TextoMatematico texto={f.enunciado} />
-                </div>
-                {f.imagen_url && (
-                  <img
-                    src={f.imagen_url}
-                    alt="Imagen de la pregunta"
-                    style={{ maxWidth: '100%', borderRadius: 8, margin: '4px 0 12px' }}
-                  />
-                )}
-                {f.opciones.map((op) => {
-                  const esCorrecta = op.letra === clave
-                  const esElegida = op.letra === elegida
-                  let estadoOp = 'normal'
-                  let etiqueta
-                  if (esCorrecta) {
-                    estadoOp = 'correcta'
-                    etiqueta = esElegida ? 'Tu respuesta, correcta' : 'Respuesta correcta'
-                  } else if (esElegida) {
-                    estadoOp = 'incorrecta'
-                    etiqueta = 'Tu respuesta'
-                  }
-                  return (
-                    <Opcion
-                      key={op.letra}
-                      letra={op.letra}
-                      texto={op.texto}
-                      imagen={op.imagen}
-                      estado={estadoOp}
-                      etiqueta={etiqueta}
-                    />
-                  )
-                })}
-              </div>
-            )
-          })}
-
-          <button type="button" style={boton(C.violeta)} onClick={volverALista}>
-            Volver a mis simulacros
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return null
-}
-
