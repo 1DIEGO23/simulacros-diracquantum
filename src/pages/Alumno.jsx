@@ -121,6 +121,14 @@ function normalizarAlternativas(alt) {
   return []
 }
 
+// Puntaje: cada pregunta correcta vale 2 puntos (60 preguntas = 120 puntos)
+const PUNTOS_POR_PREGUNTA = 2
+function puntajeDe(f) {
+  const c = Number(f?.correctas) || 0
+  const total = c + (Number(f?.incorrectas) || 0) + (Number(f?.en_blanco) || 0)
+  return { puntos: c * PUNTOS_POR_PREGUNTA, maximo: total * PUNTOS_POR_PREGUNTA }
+}
+
 // Convierte las filas de revision_intento al formato del panel de estadísticas
 // (las filas llegan ordenadas: 1-30 = Lectora, 31-60 = Matemáticas)
 function filasAItems(filas) {
@@ -544,7 +552,7 @@ export default function Alumno() {
                     </p>
                     {intento?.fin && (
                       <p style={{ margin: '6px 0 0', fontSize: 14 }}>
-                        Tu nota: <strong>{Number(intento.nota).toFixed(2)}</strong> / 20
+                        Tu puntaje: <strong>{puntajeDe(intento).puntos}</strong> / {puntajeDe(intento).maximo}
                       </p>
                     )}
                     {intento && !intento.fin && (
@@ -767,7 +775,7 @@ export default function Alumno() {
       <div style={pagina}>
         <div style={{ ...caja, display: 'flex', flexDirection: 'column' }}>
           <div style={{ order: 2, marginTop: 20 }}>
-            <PanelRendimiento items={itemsStats} puntaje={Number(resultado.nota).toFixed(2)} puntajeMax={20} />
+            <PanelRendimiento items={itemsStats} puntaje={puntajeDe(resultado).puntos} puntajeMax={puntajeDe(resultado).maximo} />
           </div>
           <div style={{ ...tarjeta, textAlign: 'center', order: 1, maxWidth: 560, width: '100%', margin: '0 auto' }}>
             <h1 style={{ marginTop: 0, fontSize: 24 }}>
@@ -775,8 +783,8 @@ export default function Alumno() {
             </h1>
             <p style={{ color: C.suave, margin: '0 0 8px' }}>{examen?.simulacro?.titulo}</p>
             <div style={{ fontSize: 56, fontWeight: 'bold', color: C.violeta, lineHeight: 1.1 }}>
-              {Number(resultado.nota).toFixed(2)}
-              <span style={{ fontSize: 22, color: C.suave }}> / 20</span>
+              {puntajeDe(resultado).puntos}
+              <span style={{ fontSize: 22, color: C.suave }}> / {puntajeDe(resultado).maximo}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 24, margin: '20px 0', flexWrap: 'wrap' }}>
               <div>
