@@ -34,12 +34,15 @@ const caja = {
   textAlign: 'center',
 }
 
-export default function RenderFiguraCodigo({ tipo, codigo }) {
+export default function RenderFiguraCodigo({ tipo, codigo, figuraTipo, figuraCodigo }) {
+  // Soportar ambos nombres de props para compatibilidad
+  const tipoFinal = tipo || figuraTipo
+  const codigoFinal = codigo || figuraCodigo
   const idRef = useRef('jxg_' + Math.random().toString(36).slice(2))
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (tipo !== 'jsxgraph' || !codigo) return
+    if (tipoFinal !== 'jsxgraph' || !codigoFinal) return
     let board = null
     let cancelado = false
     setError(null)
@@ -66,14 +69,14 @@ export default function RenderFiguraCodigo({ tipo, codigo }) {
       cancelado = true
       if (board && window.JXG) window.JXG.JSXGraph.freeBoard(board)
     }
-  }, [tipo, codigo])
+  }, [tipoFinal, codigoFinal])
 
-  if (!codigo || !tipo) return null
+  if (!codigoFinal || !tipoFinal) return null
 
-  if (tipo === 'svg') {
-    const limpio = codigo.includes('xmlns')
-      ? codigo
-      : codigo.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
+  if (tipoFinal === 'svg') {
+    const limpio = codigoFinal.includes('xmlns')
+      ? codigoFinal
+      : codigoFinal.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
     const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(limpio)
     return (
       <div style={caja}>
@@ -82,7 +85,7 @@ export default function RenderFiguraCodigo({ tipo, codigo }) {
     )
   }
 
-  if (tipo === 'jsxgraph') {
+  if (tipoFinal === 'jsxgraph') {
     return (
       <div style={caja}>
         {error && <p style={{ color: '#b00020', fontSize: 13 }}>Error en la figura: {error}</p>}
