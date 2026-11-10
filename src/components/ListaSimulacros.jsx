@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
 
-export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEliminado, onVerIntentos }) {
+export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEliminado, onVerAlumnos }) {
   const [simulacros, setSimulacros] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -70,9 +70,9 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
     }
   }
 
-  const handleVerIntentos = (simulacro) => {
-    if (onVerIntentos) {
-      onVerIntentos(simulacro)
+  const handleVerAlumnos = (simulacro) => {
+    if (onVerAlumnos) {
+      onVerAlumnos(simulacro)
     }
   }
 
@@ -177,7 +177,7 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
               </button>
 
               <button
-                onClick={() => handleVerIntentos(simulacro)}
+                onClick={() => handleVerAlumnos(simulacro)}
                 style={{
                   padding: '8px 16px',
                   borderRadius: '6px',
@@ -192,7 +192,7 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
                 onMouseOver={(e) => e.target.style.opacity = '0.8'}
                 onMouseOut={(e) => e.target.style.opacity = '1'}
               >
-                Ver intentos
+                Ver alumnos
               </button>
 
               <button
