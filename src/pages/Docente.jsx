@@ -87,7 +87,7 @@ export default function Docente() {
           id: intento.id,
           inicio: intento.inicio,
           fin: intento.fin,
-          nota: intento.nota ? (intento.nota * 6).toFixed(2) : 0,
+          nota: (intento.correctas || 0) * 2, // Cada correcta vale 2 puntos
           correctas: intento.correctas || 0,
           incorrectas: intento.incorrectas || 0
         }
@@ -461,7 +461,7 @@ export default function Docente() {
                         {alumno.intento ? (
                           <>
                             <p style={{ color: brand.colors.success, fontSize: '18px', fontWeight: 'bold' }}>
-                              Nota: {alumno.intento.nota || 0}/120
+                              Nota: {alumno.intento.nota}/120
                             </p>
                             <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
                               Correctas: {alumno.intento.correctas} | Incorrectas: {alumno.intento.incorrectas}
