@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
 
-export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEliminado }) {
+export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEliminado, onVerIntentos }) {
   const [simulacros, setSimulacros] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -67,6 +67,12 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
   const handleSeleccionar = (simulacro) => {
     if (onSimulacroSeleccionado) {
       onSimulacroSeleccionado(simulacro)
+    }
+  }
+
+  const handleVerIntentos = (simulacro) => {
+    if (onVerIntentos) {
+      onVerIntentos(simulacro)
     }
   }
 
@@ -168,6 +174,25 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
                 onMouseOut={(e) => e.target.style.opacity = '1'}
               >
                 Ver preguntas
+              </button>
+
+              <button
+                onClick={() => handleVerIntentos(simulacro)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: brand.colors.violetNeon,
+                  color: brand.colors.text,
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseOver={(e) => e.target.style.opacity = '0.8'}
+                onMouseOut={(e) => e.target.style.opacity = '1'}
+              >
+                Ver intentos
               </button>
 
               <button
