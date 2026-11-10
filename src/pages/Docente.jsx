@@ -54,47 +54,39 @@ export default function Docente() {
     setCargandoAlumnos(true)
     setVista('alumnos')
 
-    // Cargar intentos del simulacro directamente
+    // Cargar intentos del simulacro con datos del alumno
     const { data: intentosData, error: errorIntentos } = await supabase
       .from('intentos')
-      .select('id, alumno_id, inicio, fin, nota')
+      .select(`
+        id,
+        alumno_id,
+        inicio,
+        fin,
+        nota,
+        correctas,
+        incorrectas,
+        alumnos (email)
+      `)
       .eq('simulacro_id', simulacro.id)
       .order('inicio', { ascending: false })
 
     if (errorIntentos) {
       console.error('Error al cargar intentos:', errorIntentos)
+      alert('Error al cargar intentos: ' + errorIntentos.message)
       setAlumnos([])
     } else {
-      // Para cada intento, cargar datos del alumno
-      const alumnosConIntentos = await Promise.all(
-        (intentosData || []).map(async (intento) => {
-          const { data: alumnoData } = await supabase
-            .from('alumnos')
-            .select('id, email')
-            .eq('id', intento.alumno_id)
-            .single()
-
-          // Calcular correctas e incorrectas
-          const { data: respuestasData } = await supabase
-            .from('respuestas')
-            .select('correcta')
-            .eq('intento_id', intento.id)
-
-          const correctas = respuestasData?.filter(r => r.correcta).length || 0
-          const incorrectas = respuestasData?.filter(r => !r.correcta).length || 0
-
-          return {
-            id: intento.alumno_id,
-            email: alumnoData?.email || `ID: ${intento.alumno_id}`,
-            intento: {
-              ...intento,
-              correctas,
-              incorrectas
-            }
-          }
-        })
-      )
-
+      const alumnosConIntentos = (intentosData || []).map(intento => ({
+        id: intento.alumno_id,
+        email: intento.alumnos?.email || `ID: ${intento.alumno_id}`,
+        intento: {
+          id: intento.id,
+          inicio: intento.inicio,
+          fin: intento.fin,
+          nota: intento.nota,
+          correctas: intento.correctas || 0,
+          incorrectas: intento.incorrectas || 0
+        }
+      }))
       setAlumnos(alumnosConIntentos)
     }
     setCargandoAlumnos(false)
