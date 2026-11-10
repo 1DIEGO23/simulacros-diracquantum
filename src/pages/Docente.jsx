@@ -54,30 +54,43 @@ export default function Docente() {
     setCargandoAlumnos(true)
     setVista('alumnos')
 
-    // Cargar alumnos desde la tabla alumnos
-    const { data: alumnosData, error: errorAlumnos } = await supabase
-      .from('alumnos')
-      .select('id, email, rol')
-      .eq('rol', 'alumno')
+    // Cargar intentos del simulacro directamente
+    const { data: intentosData, error: errorIntentos } = await supabase
+      .from('intentos')
+      .select('id, alumno_id, inicio, fin, nota')
+      .eq('simulacro_id', simulacro.id)
+      .order('inicio', { ascending: false })
 
-    if (errorAlumnos) {
-      console.error('Error al cargar alumnos:', errorAlumnos)
+    if (errorIntentos) {
+      console.error('Error al cargar intentos:', errorIntentos)
       setAlumnos([])
     } else {
-      // Para cada alumno, buscar si tiene intento en este simulacro
+      // Para cada intento, cargar datos del alumno
       const alumnosConIntentos = await Promise.all(
-        (alumnosData || []).map(async (alumno) => {
-          const { data: intentosData } = await supabase
-            .from('intentos')
-            .select('id, inicio, fin, nota, correctas, incorrectas')
-            .eq('simulacro_id', simulacro.id)
-            .eq('alumno_id', alumno.id)
-            .order('inicio', { ascending: false })
-            .limit(1)
+        (intentosData || []).map(async (intento) => {
+          const { data: alumnoData } = await supabase
+            .from('alumnos')
+            .select('id, email')
+            .eq('id', intento.alumno_id)
+            .single()
+
+          // Calcular correctas e incorrectas
+          const { data: respuestasData } = await supabase
+            .from('respuestas')
+            .select('correcta')
+            .eq('intento_id', intento.id)
+
+          const correctas = respuestasData?.filter(r => r.correcta).length || 0
+          const incorrectas = respuestasData?.filter(r => !r.correcta).length || 0
 
           return {
-            ...alumno,
-            intento: intentosData?.[0] || null
+            id: intento.alumno_id,
+            email: alumnoData?.email || `ID: ${intento.alumno_id}`,
+            intento: {
+              ...intento,
+              correctas,
+              incorrectas
+            }
           }
         })
       )
@@ -399,7 +412,7 @@ export default function Docente() {
             {cargandoAlumnos ? (
               <p style={{ color: brand.colors.textMuted }}>Cargando alumnos...</p>
             ) : alumnos.length === 0 ? (
-              <p style={{ color: brand.colors.textMuted }}>No hay alumnos registrados.</p>
+              <p style={{ color: brand.colors.textMuted }}>Ningún alumno ha iniciado el examen aún.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {alumnos.map((alumno) => (
@@ -422,57 +435,39 @@ export default function Docente() {
                         <p style={{ color: brand.colors.text, fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                           {alumno.email}
                         </p>
-                        {alumno.intento ? (
-                          <>
-                            <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
-                              Inicio: {new Date(alumno.intento.inicio).toLocaleString()}
-                            </p>
-                            {alumno.intento.fin && (
-                              <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
-                                Fin: {new Date(alumno.intento.fin).toLocaleString()}
-                              </p>
-                            )}
-                          </>
-                        ) : (
+                        <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
+                          Inicio: {new Date(alumno.intento.inicio).toLocaleString()}
+                        </p>
+                        {alumno.intento.fin && (
                           <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
-                            No ha iniciado el examen
+                            Fin: {new Date(alumno.intento.fin).toLocaleString()}
                           </p>
                         )}
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        {alumno.intento ? (
-                          <>
-                            <p style={{ color: brand.colors.success, fontSize: '18px', fontWeight: 'bold' }}>
-                              Nota: {alumno.intento.nota || 0}/20
-                            </p>
-                            <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
-                              Correctas: {alumno.intento.correctas} | Incorrectas: {alumno.intento.incorrectas}
-                            </p>
-                          </>
-                        ) : (
-                          <p style={{ color: brand.colors.textMuted, fontSize: '14px' }}>
-                            Pendiente
-                          </p>
-                        )}
+                        <p style={{ color: brand.colors.success, fontSize: '18px', fontWeight: 'bold' }}>
+                          Nota: {alumno.intento.nota || 0}/20
+                        </p>
+                        <p style={{ color: brand.colors.textMuted, fontSize: '12px' }}>
+                          Correctas: {alumno.intento.correctas} | Incorrectas: {alumno.intento.incorrectas}
+                        </p>
                       </div>
                     </div>
-                    {alumno.intento && (
-                      <button
-                        onClick={() => handleReiniciarExamen(alumno.id, simulacroSeleccionado.id)}
-                        style={{
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          border: 'none',
-                          backgroundColor: brand.colors.warning,
-                          color: brand.colors.text,
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Reiniciar examen
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleReiniciarExamen(alumno.id, simulacroSeleccionado.id)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: brand.colors.warning,
+                        color: brand.colors.text,
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Reiniciar examen
+                    </button>
                   </div>
                 ))}
               </div>
