@@ -76,6 +76,25 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
     }
   }
 
+  const handleToggleActivo = async (simulacro) => {
+    try {
+      const { error } = await supabase
+        .from('simulacros')
+        .update({ activo: !simulacro.activo })
+        .eq('id', simulacro.id)
+
+      if (error) {
+        setError('Error al cambiar estado del simulacro')
+        return
+      }
+
+      // Recargar la lista
+      cargarSimulacros()
+    } catch (err) {
+      setError('Error al cambiar estado del simulacro')
+    }
+  }
+
   if (loading) {
     return (
       <div style={{
@@ -154,6 +173,14 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
               }}>
                 Duración: {simulacro.duracion_minutos} minutos
               </div>
+              <div style={{
+                color: simulacro.activo ? brand.colors.success : brand.colors.textMuted,
+                fontSize: '12px',
+                marginTop: '5px',
+                fontWeight: 'bold',
+              }}>
+                {simulacro.activo ? '✓ Activo' : '✗ Inactivo'}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -193,6 +220,25 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
                 onMouseOut={(e) => e.target.style.opacity = '1'}
               >
                 Ver alumnos
+              </button>
+
+              <button
+                onClick={() => handleToggleActivo(simulacro)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: simulacro.activo ? brand.colors.success : brand.colors.warning,
+                  color: brand.colors.text,
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseOver={(e) => e.target.style.opacity = '0.8'}
+                onMouseOut={(e) => e.target.style.opacity = '1'}
+              >
+                {simulacro.activo ? 'Desactivar' : 'Activar'}
               </button>
 
               <button
