@@ -399,16 +399,39 @@ export default function Docente() {
               border: `1px solid ${brand.colors.electricBlue}`,
               marginBottom: '20px',
             }}>
-              <h2 style={{
-                color: brand.colors.text,
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 marginBottom: '10px',
-                fontSize: '20px',
               }}>
-                Alumnos - Simulacro: {simulacroSeleccionado.titulo}
-              </h2>
+                <h2 style={{
+                  color: brand.colors.text,
+                  fontSize: '20px',
+                  margin: 0,
+                }}>
+                  Alumnos - Simulacro: {simulacroSeleccionado.titulo}
+                </h2>
+                <button
+                  onClick={() => handleVerAlumnos(simulacroSeleccionado)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: brand.colors.electricBlue,
+                    color: brand.colors.text,
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Recargar
+                </button>
+              </div>
               <p style={{
                 color: brand.colors.textMuted,
                 fontSize: '14px',
+                margin: 0,
               }}>
                 Duración: {simulacroSeleccionado.duracion_minutos} minutos
               </p>
