@@ -1,16 +1,112 @@
 // Página de Login
-// Permite a los usuarios iniciar sesión con correo y contraseña
+// Portada de dos columnas con temario y formulario de login
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { brand } from '../config/brand'
+import { temario } from '../config/temario'
+
+// Componente de acordeón para el temario
+function Acordeon({ titulo, items, abierto, onToggle }) {
+  return (
+    <div style={{
+      marginBottom: '12px',
+      border: `1px solid ${brand.colors.violetNeon}`,
+      borderRadius: '8px',
+      overflow: 'hidden',
+      backgroundColor: 'rgba(139, 92, 246, 0.05)',
+    }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          backgroundColor: abierto ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+          border: 'none',
+          color: brand.colors.text,
+          fontSize: '14px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          transition: 'background-color 0.2s',
+        }}
+      >
+        {titulo}
+        <span style={{ fontSize: '18px' }}>{abierto ? '−' : '+'}</span>
+      </button>
+      {abierto && (
+        <div style={{
+          padding: '12px 16px',
+          borderTop: `1px solid ${brand.colors.violetNeon}33`,
+        }}>
+          <ul style={{
+            margin: 0,
+            paddingLeft: '20px',
+            color: brand.colors.textMuted,
+            fontSize: '13px',
+            lineHeight: '1.6',
+          }}>
+            {items.map((item, idx) => (
+              <li key={idx} style={{ marginBottom: '4px' }}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Componente de tarjeta de temario
+function TarjetaTemario({ categoria }) {
+  const [abiertos, setAbiertos] = useState({})
+
+  const toggle = (idx) => {
+    setAbiertos(prev => ({ ...prev, [idx]: !prev[idx] }))
+  }
+
+  return (
+    <div style={{
+      padding: '20px',
+      borderRadius: '12px',
+      backgroundColor: 'rgba(139, 92, 246, 0.08)',
+      border: `1px solid ${brand.colors.violetNeon}`,
+      boxShadow: `0 0 15px rgba(139, 92, 246, 0.2)`,
+      maxHeight: 'calc(100vh - 80px)',
+      overflowY: 'auto',
+      scrollbarWidth: 'thin',
+      scrollbarColor: `${brand.colors.violetNeon}44 transparent`,
+    }}>
+      <h3 style={{
+        color: brand.colors.text,
+        marginBottom: '16px',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        textAlign: 'center',
+      }}>
+        {categoria.titulo}
+      </h3>
+      {categoria.secciones.map((seccion, idx) => (
+        <Acordeon
+          key={idx}
+          titulo={seccion.titulo}
+          items={seccion.items}
+          abierto={abiertos[idx]}
+          onToggle={() => toggle(idx)}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -25,7 +121,6 @@ export default function Login() {
       })
 
       if (error) {
-        // Mensajes de error claros en español, sin detalles técnicos
         if (error.message.includes('Invalid login credentials')) {
           setError('Correo o contraseña incorrectos')
         } else if (error.message.includes('Email not confirmed')) {
@@ -35,9 +130,6 @@ export default function Login() {
         }
         return
       }
-
-      // Si el login es exitoso, la redirección se maneja en el componente App
-      // gracias al context AuthContext
     } catch (err) {
       setError('Error al iniciar sesión. Inténtalo de nuevo')
     } finally {
@@ -48,141 +140,235 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100vh',
+      backgroundColor: brand.colors.background,
+      padding: '20px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: brand.colors.background,
-      padding: '16px',
     }}>
-      <div style={{
-        maxWidth: '400px',
+      <div className="login-container" style={{
+        maxWidth: '1200px',
         width: '100%',
-        padding: '24px',
-        borderRadius: '12px',
-        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-        border: `1px solid ${brand.colors.violetNeon}`,
-        boxShadow: `0 0 20px rgba(139, 92, 246, 0.3)`,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '40px',
+        alignItems: 'start',
       }}>
-        <img
-          src={brand.logoUrl}
-          alt="Logo DiracQuantum"
-          style={{
-            display: 'block',
-            margin: '0 auto 16px',
-            maxWidth: '200px',
-            width: '100%',
-            height: 'auto',
-          }}
-        />
-        <h1 style={{
-          color: brand.colors.text,
-          textAlign: 'center',
-          marginBottom: '8px',
-          fontSize: '20px',
-          lineHeight: 1.3,
+        {/* Columna IZQUIERDA: Temario */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
         }}>
-          {brand.name}
-        </h1>
-        <p style={{
-          color: brand.colors.textMuted,
-          textAlign: 'center',
-          marginBottom: '24px',
-          fontSize: '13px',
+          <TarjetaTemario categoria={temario.competenciaLectora} />
+          <TarjetaTemario categoria={temario.matematica} />
+        </div>
+
+        {/* Columna DERECHA: Logo, título, botón, formulario */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
         }}>
-          {brand.slogan}
-        </p>
+          <img
+            src="/logo.png"
+            alt="Logo DiracQuantum"
+            style={{
+              maxWidth: '250px',
+              width: '100%',
+              height: 'auto',
+              marginBottom: '24px',
+            }}
+          />
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div>
-            <label style={{
-              display: 'block',
-              color: brand.colors.text,
-              marginBottom: '8px',
-              fontSize: '14px',
-            }}>
-              Correo electrónico
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+          <h1 style={{
+            color: brand.colors.text,
+            textAlign: 'center',
+            marginBottom: '12px',
+            fontSize: '28px',
+            lineHeight: 1.3,
+            fontWeight: 'bold',
+          }}>
+            Bienvenidos a la plataforma de simulacros de DiracQuantum!
+          </h1>
+
+          <p style={{
+            color: brand.colors.textMuted,
+            textAlign: 'center',
+            marginBottom: '32px',
+            fontSize: '16px',
+          }}>
+            Preparamos tu mente para tu éxito académico
+          </p>
+
+          {!mostrarFormulario ? (
+            <button
+              onClick={() => setMostrarFormulario(true)}
               style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '6px',
-                border: `1px solid ${brand.colors.violetNeon}`,
-                backgroundColor: 'rgba(5, 6, 15, 0.5)',
+                padding: '16px 48px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: brand.colors.violetNeon,
                 color: brand.colors.text,
-                fontSize: '14px',
-                boxSizing: 'border-box',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+                boxShadow: `0 0 20px rgba(139, 92, 246, 0.4)`,
               }}
-              placeholder="tu@ejemplo.com"
-            />
-          </div>
-
-          <div>
-            <label style={{
-              display: 'block',
-              color: brand.colors.text,
-              marginBottom: '8px',
-              fontSize: '14px',
-            }}>
-              Contraseña
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '6px',
-                border: `1px solid ${brand.colors.violetNeon}`,
-                backgroundColor: 'rgba(5, 6, 15, 0.5)',
-                color: brand.colors.text,
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
+              onMouseOver={(e) => e.target.style.opacity = '0.8'}
+              onMouseOut={(e) => e.target.style.opacity = '1'}
+            >
+              Iniciar sesión
+            </button>
+          ) : (
             <div style={{
-              padding: '12px',
-              borderRadius: '6px',
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              border: `1px solid ${brand.colors.error}`,
-              color: brand.colors.error,
-              fontSize: '14px',
+              width: '100%',
+              maxWidth: '400px',
+              padding: '24px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              border: `1px solid ${brand.colors.violetNeon}`,
+              boxShadow: `0 0 20px rgba(139, 92, 246, 0.3)`,
+              animation: 'fadeIn 0.3s ease-in-out',
             }}>
-              {error}
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    color: brand.colors.text,
+                    marginBottom: '8px',
+                    fontSize: '14px',
+                  }}>
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '6px',
+                      border: `1px solid ${brand.colors.violetNeon}`,
+                      backgroundColor: 'rgba(5, 6, 15, 0.5)',
+                      color: brand.colors.text,
+                      fontSize: '14px',
+                      boxSizing: 'border-box',
+                    }}
+                    placeholder="tu@ejemplo.com"
+                  />
+                </div>
+
+                <div>
+                  <label style={{
+                    display: 'block',
+                    color: brand.colors.text,
+                    marginBottom: '8px',
+                    fontSize: '14px',
+                  }}>
+                    Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '6px',
+                      border: `1px solid ${brand.colors.violetNeon}`,
+                      backgroundColor: 'rgba(5, 6, 15, 0.5)',
+                      color: brand.colors.text,
+                      fontSize: '14px',
+                      boxSizing: 'border-box',
+                    }}
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                {error && (
+                  <div style={{
+                    padding: '12px',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    border: `1px solid ${brand.colors.error}`,
+                    color: brand.colors.error,
+                    fontSize: '14px',
+                  }}>
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: brand.colors.violetNeon,
+                    color: brand.colors.text,
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  {loading ? 'Iniciando sesión...' : 'Ingresar'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarFormulario(false)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: brand.colors.textMuted,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Volver
+                </button>
+              </form>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: brand.colors.violetNeon,
-              color: brand.colors.text,
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </button>
-        </form>
+          <p style={{
+            color: brand.colors.textMuted,
+            textAlign: 'center',
+            marginTop: '32px',
+            fontSize: '12px',
+            fontStyle: 'italic',
+          }}>
+            Tu esfuerzo de hoy es tu ingreso de mañana.
+          </p>
+        </div>
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+          .login-container {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
