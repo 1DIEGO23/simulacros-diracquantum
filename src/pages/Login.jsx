@@ -652,7 +652,7 @@ export default function Login() {
         backgroundColor: brand.colors.background,
       }}>
         {/* Sección hero */}
-        <div style={{
+        <div className="hero-section" style={{
           padding: '40px 20px',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -1004,16 +1004,33 @@ export default function Login() {
         }
 
         @media (max-width: 768px) {
+          .hero-section {
+            grid-template-columns: 1fr !important;
+            gap: '24px !important';
+            padding: '24px 16px !important';
+          }
+
           .left-column {
-            display: none !important;
+            display: flex !important;
+            order: 2 !important;
           }
 
           .mobile-temario-button {
-            display: block !important;
+            display: none !important;
           }
 
           .whatsapp-text {
             display: none !important;
+          }
+
+          .background-symbols div {
+            fontSize: '60px !important';
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero-section {
+            padding: '20px 12px !important';
           }
         }
 
