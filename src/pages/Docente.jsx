@@ -160,12 +160,12 @@ export default function Docente() {
       backgroundColor: brand.colors.background,
       padding: '20px 12px',
     }}>
-      <div style={{
+      <div className="docente-container" style={{
         maxWidth: '800px',
         margin: '0 auto',
       }}>
         {/* Encabezado */}
-        <div style={{
+        <div className="docente-header" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -224,7 +224,7 @@ export default function Docente() {
         </div>
 
         {/* Botones de navegación */}
-        <div style={{
+        <div className="docente-nav" style={{
           display: 'flex',
           gap: '10px',
           marginBottom: '30px',
@@ -446,6 +446,7 @@ export default function Docente() {
                 {alumnos.map((alumno) => (
                   <div
                     key={alumno.id}
+                    className="alumno-card"
                     style={{
                       padding: '15px',
                       borderRadius: '8px',
@@ -521,6 +522,70 @@ export default function Docente() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .docente-container {
+            padding: '16px 8px !important';
+          }
+
+          .docente-header {
+            flex-direction: 'column !important';
+            align-items: 'flex-start !important';
+          }
+
+          .docente-nav {
+            flex-direction: 'column !important';
+          }
+
+          .docente-nav button {
+            width: '100% !important';
+          }
+
+          .alumno-card {
+            flex-direction: 'column !important';
+            align-items: 'flex-start !important';
+          }
+
+          .alumno-card > div > div {
+            width: '100% !important';
+            margin-bottom: '10px !important';
+          }
+
+          .alumno-card > div > div:last-child {
+            text-align: 'left !important';
+          }
+
+          .simulacro-card {
+            flex-direction: 'column !important';
+            align-items: 'flex-start !important';
+          }
+
+          .simulacro-card > div {
+            width: '100% !important';
+            margin-bottom: '10px !important';
+          }
+
+          .simulacro-buttons {
+            width: '100% !important';
+            flex-direction: 'column !important';
+          }
+
+          .simulacro-buttons button {
+            width: '100% !important';
+          }
+        }
+
+        @media (max-width: 480px) {
+          .docente-header h1 {
+            font-size: '18px !important';
+          }
+
+          .docente-header p {
+            font-size: '12px !important';
+          }
+        }
+      `}</style>
     </div>
   )
 }

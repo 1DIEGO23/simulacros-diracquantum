@@ -148,6 +148,7 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
         {simulacros.map((simulacro) => (
           <div
             key={simulacro.id}
+            className="simulacro-card"
             style={{
               padding: '15px',
               borderRadius: '8px',
@@ -183,7 +184,7 @@ export default function ListaSimulacros({ onSimulacroSeleccionado, onSimulacroEl
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px' }} className="simulacro-buttons">
               <button
                 onClick={() => handleSeleccionar(simulacro)}
                 style={{
