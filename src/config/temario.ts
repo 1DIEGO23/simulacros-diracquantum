@@ -1,9 +1,9 @@
-// Temario Beca 18
+// Temario ENP - Beca 18
 // Contenido para la portada de DiracQuantum
 
 export const temario = {
   competenciaLectora: {
-    titulo: 'COMPETENCIA LECTORA',
+    titulo: 'COMPETENCIA LECTORA (Temario ENP - Beca 18)',
     secciones: [
       {
         titulo: 'Obtiene información del texto',
@@ -36,7 +36,7 @@ export const temario = {
     ],
   },
   matematica: {
-    titulo: 'MATEMÁTICA',
+    titulo: 'MATEMÁTICA (Temario ENP - Beca 18)',
     secciones: [
       {
         titulo: 'Números y operaciones',

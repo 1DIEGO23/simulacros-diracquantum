@@ -101,12 +101,123 @@ function TarjetaTemario({ categoria }) {
   )
 }
 
+// Componente de panel de temario completo
+function PanelTemario({ onCerrar }) {
+  const [abiertosLectora, setAbiertosLectora] = useState({})
+  const [abiertosMatematica, setAbiertosMatematica] = useState({})
+
+  const toggleLectora = (idx) => {
+    setAbiertosLectora(prev => ({ ...prev, [idx]: !prev[idx] }))
+  }
+
+  const toggleMatematica = (idx) => {
+    setAbiertosMatematica(prev => ({ ...prev, [idx]: !prev[idx] }))
+  }
+
+  return (
+    <div style={{
+      width: '100%',
+      padding: '24px',
+      borderRadius: '12px',
+      backgroundColor: 'rgba(139, 92, 246, 0.08)',
+      border: `1px solid ${brand.colors.violetNeon}`,
+      boxShadow: `0 0 20px rgba(139, 92, 246, 0.3)`,
+      maxHeight: 'calc(100vh - 80px)',
+      overflowY: 'auto',
+      scrollbarWidth: 'thin',
+      scrollbarColor: `${brand.colors.violetNeon}44 transparent`,
+      animation: 'fadeIn 0.3s ease-in-out',
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px',
+      }}>
+        <h2 style={{
+          color: brand.colors.text,
+          fontSize: '20px',
+          fontWeight: 'bold',
+          margin: 0,
+        }}>
+          Temario ENP - Beca 18
+        </h2>
+        <button
+          onClick={onCerrar}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: 'transparent',
+            color: brand.colors.textMuted,
+            fontSize: '13px',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+          }}
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <p style={{
+        color: brand.colors.textMuted,
+        fontSize: '14px',
+        marginBottom: '24px',
+        textAlign: 'center',
+      }}>
+        60 preguntas: 30 de Competencia Lectora y 30 de Competencia Matemática
+      </p>
+
+      <div style={{ marginBottom: '20px' }}>
+        <h3 style={{
+          color: brand.colors.text,
+          marginBottom: '12px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+        }}>
+          {temario.competenciaLectora.titulo}
+        </h3>
+        {temario.competenciaLectora.secciones.map((seccion, idx) => (
+          <Acordeon
+            key={idx}
+            titulo={seccion.titulo}
+            items={seccion.items}
+            abierto={abiertosLectora[idx]}
+            onToggle={() => toggleLectora(idx)}
+          />
+        ))}
+      </div>
+
+      <div>
+        <h3 style={{
+          color: brand.colors.text,
+          marginBottom: '12px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+        }}>
+          {temario.matematica.titulo}
+        </h3>
+        {temario.matematica.secciones.map((seccion, idx) => (
+          <Acordeon
+            key={idx}
+            titulo={seccion.titulo}
+            items={seccion.items}
+            abierto={abiertosMatematica[idx]}
+            onToggle={() => toggleMatematica(idx)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [mostrarTemario, setMostrarTemario] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -154,14 +265,54 @@ export default function Login() {
         gap: '40px',
         alignItems: 'start',
       }}>
-        {/* Columna IZQUIERDA: Temario */}
-        <div style={{
+        {/* Columna IZQUIERDA: Botón de temario */}
+        <div className="left-column" style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px',
         }}>
-          <TarjetaTemario categoria={temario.competenciaLectora} />
-          <TarjetaTemario categoria={temario.matematica} />
+          {!mostrarTemario ? (
+            <button
+              onClick={() => setMostrarTemario(true)}
+              style={{
+                padding: '24px 48px',
+                borderRadius: '12px',
+                border: `2px solid ${brand.colors.violetNeon}`,
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                color: brand.colors.text,
+                fontSize: '20px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: `0 0 20px rgba(139, 92, 246, 0.3)`,
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'
+                e.target.style.boxShadow = `0 0 30px rgba(139, 92, 246, 0.5)`
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.1)'
+                e.target.style.boxShadow = `0 0 20px rgba(139, 92, 246, 0.3)`
+              }}
+            >
+              Temario ENP - Beca 18
+            </button>
+          ) : (
+            <PanelTemario onCerrar={() => setMostrarTemario(false)} />
+          )}
+
+          {!mostrarTemario && (
+            <p style={{
+              color: brand.colors.textMuted,
+              textAlign: 'center',
+              marginTop: '12px',
+              fontSize: '13px',
+            }}>
+              Examen Nacional de Preselección
+            </p>
+          )}
         </div>
 
         {/* Columna DERECHA: Logo, título, botón, formulario */}
@@ -354,6 +505,44 @@ export default function Login() {
           }}>
             Tu esfuerzo de hoy es tu ingreso de mañana.
           </p>
+
+          {/* Botón de temario para móvil (solo visible en pantallas pequeñas) */}
+          <div style={{
+            display: 'none',
+            marginTop: '24px',
+          }} className="mobile-temario-button">
+            {!mostrarTemario ? (
+              <button
+                onClick={() => setMostrarTemario(true)}
+                style={{
+                  padding: '16px 32px',
+                  borderRadius: '8px',
+                  border: `2px solid ${brand.colors.violetNeon}`,
+                  backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                  color: brand.colors.text,
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: `0 0 15px rgba(139, 92, 246, 0.3)`,
+                }}
+              >
+                Temario ENP - Beca 18
+              </button>
+            ) : (
+              <PanelTemario onCerrar={() => setMostrarTemario(false)} />
+            )}
+            {!mostrarTemario && (
+              <p style={{
+                color: brand.colors.textMuted,
+                textAlign: 'center',
+                marginTop: '8px',
+                fontSize: '12px',
+              }}>
+                Examen Nacional de Preselección
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -366,6 +555,14 @@ export default function Login() {
         @media (max-width: 768px) {
           .login-container {
             grid-template-columns: 1fr !important;
+          }
+
+          .left-column {
+            display: none !important;
+          }
+
+          .mobile-temario-button {
+            display: block !important;
           }
         }
       `}</style>
