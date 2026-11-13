@@ -7,6 +7,12 @@ export const brand = {
   slogan: 'Preparamos tu mente para tu éxito académico',
   logoUrl: '/logo.png',
 
+  // Contacto
+  whatsappUrl: 'https://wa.link/ij4coz',
+
+  // Examen ENP
+  examenFecha: '2026-11-22T00:00:00-05:00', // 2026-11-22, hora de Lima (America/Lima)
+
   // Colores
   colors: {
     // Fondo: casi negro
